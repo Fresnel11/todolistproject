@@ -2,11 +2,13 @@
       <div class="contain">
         <h1>TODOLIST</h1>
         <div class="container">
-          <label for="">Ajoutez une tâche !</label>
-          <br />
-          <input type="text" required v-model="inputValue" />
-          <br />
-          <button class="button-62" role="button">Ajouter</button>
+          <form @submit.prevent="addList">
+            <label for="">Ajoutez une tâche !</label>
+            <br />
+            <input class="modifinput" type="text" required v-model="inputValue" />
+            <br />
+            <button class="button-62" role="button">Ajouter</button>
+          </form>
         </div>
 
         <div class="table">
@@ -19,16 +21,16 @@
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody v-if="todoArray.length == 0">
               <tr>
                 <td colspan="4">En attentes de tâches...</td>
               </tr>
             </tbody>
-            <tbody>
-              <tr>
+            <tbody v-else>
+              <tr v-for="todo in todoArray" :key="todo.id">
                 <td>
                   <div class="checkbox-wrapper-31">
-                      <input type="checkbox"/>
+                      <input type="checkbox" @click="toggle(todo)" :checked="todo.etat"/>
                     <svg viewBox="0 0 35.6 35.6">
                       <circle class="background" cx="17.8" cy="17.8" r="17.8"></circle>
                       <circle class="stroke" cx="17.8" cy="17.8" r="14.37"></circle>
@@ -36,22 +38,29 @@
                     </svg>
                   </div>
                 </td>
-                <td>todo text</td>
-                <td>Etat</td>
+                <td>
+                  <input class="editing" v-if="editingId === todo.id" type="text" v-model="todo.text" />
+                  <span v-else>{{ todo.text }}</span>
+                </td>
+                <td>{{!todo.etat ? "Non traitée" : "Traitée"}}</td>
                 <td>
                   <span class="icons">
-                    <svg class="icon1" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#0556f7" title="Modifier">
-                      <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
-                    </svg>
-          
-                    <svg class="icon2" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e30202" title="Supprimer">
-                      <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
-                    </svg>
+                    <span class="icon1" @click="modif(todo)" v-if="!todo.etat && editingId !== todo.id">
+                      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#0556f7" title="Modifier">
+                        <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+                      </svg>
+                    </span>
+                    <button class="button-16" role="button"  v-if="editingId === todo.id" @click="saveModif(todo)">Sauvegarder</button>
+                    <span class="icon2" @click="supp(todo)">
+                      <svg  xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e30202" title="Supprimer">
+                        <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
+                      </svg>
+                    </span>
                   </span>
                 </td>
               </tr>
             </tbody>
-            <tfoot >
+            <tfoot v-if="todoArray.length !== 0" >
               <tr>
                 <th colspan="4"></th>
               </tr>
@@ -62,45 +71,122 @@
 </template>
 
 <script setup>
-// import { ref } from "vue";
+import { ref } from "vue";
 
-// let id = ref(0);
-// let todoArray = ref([]);
-// let inputValue = ref("");
+const id = ref(0);
+const editingId = ref(null);
+let inputValue = ref("");
+let todoArray = ref([]);
 
-// // 
-// function changeValue() {
-//   id.value++;
-//   inputValue.value = "";
+//Incrémentation et réinitialisation de la l'entrée input
+function changeValue() {
+  
+
+    id.value++;
+    inputValue.value = "";
+}
+
+//Ajout d'un nouvel élément à notre tableau
+ function addList() {
+    
+
+    todoArray.value.push({
+      id: id.value,
+      text: `${inputValue.value}`,
+      etat: false,
+  
+    });
+   
+    changeValue();
+  }
+
+  //Modification de l'état en fonction du checkbox
+function toggle(todo){
+    
+
+    if(todo.etat){
+      todoArray.value.map(t => {
+      if(t.id == todo.id) 
+       t.etat = false;
+      });
+    
+    } else {
+      todoArray.value.map(t => {
+      if(t.id == todo.id) 
+       t.etat = true;
+      });
+    }
+  }
+
+  function modif(todo) {
+    editingId.value = todo.id; // Définit l'ID de la tâche en cours de modification
+    }
+
+  function saveModif(todo) {
+              // Utilisez 'todo' pour trouver et mettre à jour la tâche dans 'todoArray'
+    const index = todoArray.value.findIndex(t => t.id === todo.id);
+    if (index !== -1) {
+    todoArray.value[index] = todo; // Met à jour la tâche avec les nouvelles informations
+    }
+    editingId.value = null; // Réinitialise l'ID de la tâche en cours de modification
+    }
+
+    
+
+//Modification d'un élément
+// function modif(id, todo) {
+//     // Recherche de l'index de l'élément avec l'id donné
+   
 // }
 
-// //Fonctiopn pour ajouter un nouvel élément à notre tableau
-// const addList = function () {
-//   todoArray.value.push({
-//     id: id.value,
-//     text: `${inputValue.value}`,
-//     etat: false,
-
-//   });
- 
-//   changeValue();
-// };
-
-// function toggle(todo){
-
-// if(todo.etat){
-//   todoArray.value.map(t => {
-//   if(t.id == todo.id) 
-//    t.etat = false;
-//   });
-
+// function modif(todoArray, index, todo) {
+// if (index >= 0 && index < todoArray.length) {
+//   todoArray[index] = todo;
+// return true; // Retourne vrai si la modification a été effectuée
 // } else {
-//   todoArray.value.map(t => {
-//   if(t.id == todo.id) 
-//    t.etat = true;
-//   });
+// return false; // Retourne faux si l'index est hors des limites du tableau
 // }
 // }
+
+// function modif(todoArray, index, newtodo) {
+//     if (index < 0 || index >= todoArray.length) {
+//         console.error("Index hors limites.");
+//         return todoArray;
+//     }
+
+//     let nouveauTableau = Array.from(todoArray);  // Crée une copie du tableau pour éviter les mutations directes
+
+//     nouveauTableau[index] = newtodo;  // Remplace la tâche à l'index spécifié par la nouvelle tâche
+
+//     return nouveauTableau;
+// }
+
+// function modif(todo) {
+//     // Recherche de l'index de l'élément dans todoArray
+//     const index = todoArray.value.findIndex(t => t.id === todo.id);
+
+//     if (index !== -1) {
+//         // Création d'une copie de l'objet todo pour modification
+//         const updatedTodo = {
+//             id: todo.id,
+//             text: `${todo.text}`,  // Exemple de modification du texte
+//             etat: todo.etat  // Garde l'état inchangé pour cette démonstration
+//         };
+
+//         // Remplacement de l'élément à l'index trouvé
+//         todoArray.value.splice(index, 1, updatedTodo);
+//     } else {
+//         console.error("Élément non trouvé dans le tableau.");
+//     }
+// }
+
+
+//Suppression d'un élément
+function supp(todo) {
+    
+
+    todoArray.value= todoArray.value.filter(t => t.id !== todo.id);
+  }
 </script>
 
 <style>
@@ -123,9 +209,44 @@
   
 }
 
+.editing {
+  border: none;
+  padding: 8px;
+  background-color: #bcd2f7;
+}
 
+.button-16 {
+  background-color: #f8f9fa;
+  border: 1px solid #f8f9fa;
+  border-radius: 4px;
+  color: #3c4043;
+  cursor: pointer;
+  font-family: arial,sans-serif;
+  font-size: 14px;
+  height: 36px;
+  line-height: 27px;
+  min-width: 54px;
+  padding: 0 16px;
+  text-align: center;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  white-space: pre;
+}
 
-input[type="text"] {
+.button-16:hover {
+  background-color: #6cbe45;
+  border-color: #dadce0;
+  box-shadow: rgba(0, 0, 0, .1) 0 1px 1px;
+  color: #FFFFFF;
+}
+
+.button-16:focus {
+  border-color: #4285f4;
+  outline: none;
+}
+
+.modifinput {
   border: none;
   border-radius: 10px;
   box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;

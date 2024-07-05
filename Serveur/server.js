@@ -1,6 +1,30 @@
 const express = require('express');
 const serveur = express();
+const fs = require('fs');
 const port = 3000;
+
+const path = 'Serveur/model/model.json'
+
+// Lire les données du fichier JSON
+function readData() {
+  try {
+  const data = fs.readFileSync(path, 'utf8');
+  return JSON.parse(data);
+  } catch (err) {
+  console.error(err);
+  return [];
+  }
+  }
+
+  // Écrire les données dans le fichier JSON
+function writeData(data) {
+  try {
+  fs.writeFileSync(path, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+  console.error(err);
+  }
+  }
+  
 
 // Définissez vos routes ici
 serveur.get('/', (req, res) => {
